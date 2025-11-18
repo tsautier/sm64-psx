@@ -7,7 +7,7 @@ CC           := clang
 CXX          := clang++
 CFLAGS       := -I. -Iinclude -Wall -Wextra -Wno-unused-parameter -pedantic -O3 -march=native -mtune=native -s -g
 LDFLAGS      := -lm -lstdc++
-ALL_PROGRAMS := textconv aifc_decode aiff_extract_codebook tabledesign extract_data_for_mio skyconv makextfiles compress_mario_anims psx_sample_gen convert_image_psx
+ALL_PROGRAMS := textconv aifc_decode aiff_extract_codebook tabledesign extract_data_for_mio skyconv makextfiles compress_mario_anims psx_sample_gen convert_image_psx n64graphics mio0
 LIBAUDIOFILE := audiofile/libaudiofile.a
 
 # Only build armips from tools if it is not found on the system
@@ -23,18 +23,19 @@ makextfiles_SOURCES := makextfiles.c
 
 compress_mario_anims_SOURCES := compress_mario_anims.c
 
+psx_sample_gen: $(LIBAUDIOFILE)
 psx_sample_gen_SOURCES := psx_sample_gen.c
 psx_sample_gen_CFLAGS  := -Iaudiofile
 psx_sample_gen_LDFLAGS := -Laudiofile -laudiofile
 
 convert_image_psx_SOURCES := convert_image_psx.c
 
-#n64graphics_SOURCES := n64graphics.c utils.c
-#n64graphics_CFLAGS  := -DN64GRAPHICS_STANDALONE
-#n64graphics_ci_SOURCES := n64graphics_ci_dir/n64graphics_ci.c n64graphics_ci_dir/exoquant/exoquant.c n64graphics_ci_dir/utils.c
+n64graphics_SOURCES := n64graphics.c utils.c
+n64graphics_CFLAGS  := -DN64GRAPHICS_STANDALONE
+n64graphics_ci_SOURCES := n64graphics_ci_dir/n64graphics_ci.c n64graphics_ci_dir/exoquant/exoquant.c n64graphics_ci_dir/utils.c
 
-#mio0_SOURCES := libmio0.c
-#mio0_CFLAGS  := -DMIO0_STANDALONE
+mio0_SOURCES := libmio0.c
+mio0_CFLAGS  := -DMIO0_STANDALONE
 
 #n64cksum_SOURCES := n64cksum.c utils.c
 #n64cksum_CFLAGS  := -DN64CKSUM_STANDALONE

@@ -12,6 +12,9 @@
 /tabledesign
 /textconv
 /vadpcm_enc
+/psx_sample_gen
+/makextfiles
+/convert_image_psx
 !/ido5.3_compiler/lib/*.so
 !/ido5.3_compiler/usr/lib/*.so
 !/ido5.3_compiler/usr/lib/*.so.1
