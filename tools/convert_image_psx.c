@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <endian.h>
+#include "endian.h"
 #include <png.h>
 #define WUFFS_IMPLEMENTATION
 #define WUFFS_CONFIG__STATIC_FUNCTIONS
