@@ -20,12 +20,7 @@ LDFLAGS      := -lm -lstdc++
 ALL_PROGRAMS := textconv aifc_decode aiff_extract_codebook tabledesign extract_data_for_mio skyconv makextfiles compress_mario_anims psx_sample_gen convert_image_psx n64graphics mio0
 LIBAUDIOFILE := audiofile/libaudiofile.a
 
-# Only build armips from tools if it is not found on the system
-ifeq ($(call find-command,armips),)
-  BUILD_PROGRAMS := $(ALL_PROGRAMS)
-else
-  BUILD_PROGRAMS := $(filter-out armips,$(ALL_PROGRAMS))
-endif
+BUILD_PROGRAMS := $(ALL_PROGRAMS)
 
 default: all
 
@@ -69,14 +64,6 @@ tabledesign_LDFLAGS := -Laudiofile -laudiofile -lstdc++
 extract_data_for_mio_SOURCES := extract_data_for_mio.c
 
 skyconv_SOURCES := skyconv.c n64graphics.c utils.c
-
-#armips: CC := $(CXX)
-#armips_SOURCES := armips.cpp
-#armips_CFLAGS  := -std=c++11 -fno-exceptions -fno-rtti -pipe -x c++
-#armips_LDFLAGS := -pthread
-#ifeq ($(HOST_ENV),MinGW)
-#  armips_LDFLAGS += -municode
-#endif
 
 # upstream psxavenc currently does not compile! need to build a fork
 psxavenc/build/psxavenc:
