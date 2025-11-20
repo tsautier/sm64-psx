@@ -62,8 +62,10 @@ void gfx_reset_dl_exec() {
 
 	u32 sxy0, sxy1, sxy2, sxy3;
 	s32 z, min_z;
+	bool gte_errored;
 	if(ortho_z >= 0) {
 		if((u32) ortho_z >= MAX_Z) return;
+		gte_errored = false;
 		z = ortho_z;
 		min_z = ortho_z;
 		gte_setControlReg(GTE_RT31RT32, 0);
@@ -89,15 +91,16 @@ void gfx_reset_dl_exec() {
 
 		debug_processed_poly_count++;
 
-		// if there was any error in rtpt, clip it
-		if(gte_getControlReg(GTE_FLAG) & IMPORTANT_GTE_ERRORS) return;
+		//// if there was any error in rtpt, cull it
+		//if(gte_getControlReg(GTE_FLAG) & IMPORTANT_GTE_ERRORS) return;
+		gte_errored = gte_getControlReg(GTE_FLAG) & IMPORTANT_GTE_ERRORS;
 
 		// prepare to reject backfaces
 		gte_commandNoNop(GTE_CMD_NCLIP);
 
 		// sort z in the meantime
 		z = gte_getDataReg(GTE_SZ1);
-		if(z >= MAX_Z) {
+		if(z >= MAX_Z && !v3) {
 			return; // the quickest rejection known to man
 		}
 		s32 v1sz = gte_getDataReg(GTE_SZ2);
@@ -129,8 +132,9 @@ void gfx_reset_dl_exec() {
 			gte_loadDataRegM(GTE_VZ0, &v3->zuv);
 			gte_commandAfterLoad(GTE_CMD_RTPS | GTE_SF);
 
-			// if there was any error in rtps, clip it
-			if(gte_getControlReg(GTE_FLAG) & IMPORTANT_GTE_ERRORS) return;
+			//// if there was any error in rtps, cull it
+			//if(gte_getControlReg(GTE_FLAG) & IMPORTANT_GTE_ERRORS) return;
+			gte_errored = gte_errored || (gte_getControlReg(GTE_FLAG) & IMPORTANT_GTE_ERRORS);
 
 			// prepare to reject backfaces
 			gte_commandNoNop(GTE_CMD_NCLIP);
@@ -177,9 +181,12 @@ void gfx_reset_dl_exec() {
 	}
 
 	// these things will hopefully be done while nct is cooking
-	if((flags & (PRIM_FLAG_TESSELLATE_LOW | PRIM_FLAG_TESSELLATE_HIGH)) && min_z <= MAX_TESSELLATION_Z) {
+	if(gte_errored || ((flags & (PRIM_FLAG_TESSELLATE_LOW | PRIM_FLAG_TESSELLATE_HIGH)) && min_z <= MAX_TESSELLATION_Z)) {
 		if(min_z > MAX_HIGH_TESSELLATION_Z) {
 			flags &= ~PRIM_FLAG_TESSELLATE_HIGH;
+		}
+		if(gte_errored) {
+			flags |= PRIM_FLAG_TESSELLATE_HIGH;
 		}
 		gfx_begin_queueing_for_tessellation(v0, v1, v2, v3, flags);
 		if(flags & PRIM_FLAG_LIGHTED) {

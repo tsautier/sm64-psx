@@ -95,7 +95,7 @@ void gfx_finish_queueing_for_tessellation(u32 rgb0, u32 rgb1, u32 rgb2, u32 rgb3
 void gfx_flush_tessellation_queue_inner();
 void gfx_flush_tessellation_queue_if_necessary();
 
-#define IMPORTANT_GTE_ERRORS (\
+#define FATAL_GTE_ERRORS (\
 	GTE_FLAG_MAC0_UNDERFLOW |\
 	GTE_FLAG_MAC0_OVERFLOW |\
 	GTE_FLAG_IR2_SATURATED |\
@@ -107,3 +107,5 @@ void gfx_flush_tessellation_queue_if_necessary();
 	GTE_FLAG_MAC2_OVERFLOW |\
 	GTE_FLAG_MAC1_OVERFLOW\
 )
+
+#define IMPORTANT_GTE_ERRORS 0xFFFFFFFF

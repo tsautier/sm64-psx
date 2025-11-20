@@ -68,8 +68,8 @@ TESSELLATION_ICACHE_FUNC [[gnu::flatten]] static void draw_sub_poly(const GfxVtx
 
 	bool blend = preloaded_flags->flags & PRIM_FLAG_FORCE_BLEND;
 
-	// if there was any error in rtpt, clip it
-	if(gte_getControlReg(GTE_FLAG) & IMPORTANT_GTE_ERRORS) return;
+	// if there was any error in rtpt, cull it
+	if(gte_getControlReg(GTE_FLAG) & FATAL_GTE_ERRORS) return;
 
 	// fetch the results
 	s32 sxy0 = gte_getDataReg(GTE_SXY0);
@@ -93,14 +93,8 @@ TESSELLATION_ICACHE_FUNC [[gnu::flatten]] static void draw_sub_poly(const GfxVtx
 		gte_loadDataRegM(GTE_VZ0, (u32*) &v3->z);
 		gte_commandAfterLoad(GTE_CMD_RTPS | GTE_SF);
 
-		// copied up here to let rtps cover the costs of this
-		// after all, most subpolys are quads
-		//sxy0 = (sxy0 & 0xFFFF) | (YRES - (sxy0 >> 16)) << 16;
-		//sxy1 = (sxy1 & 0xFFFF) | (YRES - (sxy1 >> 16)) << 16;
-		//sxy2 = (sxy2 & 0xFFFF) | (YRES - (sxy2 >> 16)) << 16;
-
-		// if there was any error in rtps, clip it
-		if(gte_getControlReg(GTE_FLAG) & IMPORTANT_GTE_ERRORS) return;
+		// if there was any error in rtps, cull it
+		if(gte_getControlReg(GTE_FLAG) & FATAL_GTE_ERRORS) return;
 
 		// get the result
 		sxy3 = gte_getDataReg(GTE_SXY2);
@@ -108,19 +102,14 @@ TESSELLATION_ICACHE_FUNC [[gnu::flatten]] static void draw_sub_poly(const GfxVtx
 		if(v3sz > z) {
 			z = v3sz;
 		}
-		//sxy3 = (sxy3 & 0xFFFF) | (YRES - (sxy3 >> 16)) << 16;
-	} else {
-		//sxy0 = (sxy0 & 0xFFFF) | (YRES - (sxy0 >> 16)) << 16;
-		//sxy1 = (sxy1 & 0xFFFF) | (YRES - (sxy1 >> 16)) << 16;
-		//sxy2 = (sxy2 & 0xFFFF) | (YRES - (sxy2 >> 16)) << 16;
 	}
 	if((u32) (z - 1) >= (u32) (MAX_Z - 1)) {
 		return;
 	}
-	//s16 sx0 = sxy0, sx1 = sxy1, sx2 = sxy2, sx3 = sxy3;
-	//if((sx0 <= 0 && sx1 <= 0 && sx2 <= 0 && sx3 <= 0) || (sx0 >= XRES && sx1 >= XRES && sx2 >= XRES && sx3 >= XRES)) {
-	//	return;
-	//}
+	s16 sx0 = sxy0, sx1 = sxy1, sx2 = sxy2, sx3 = sxy3;
+	if((sx0 <= 0 && sx1 <= 0 && sx2 <= 0 && sx3 <= 0) || (sx0 >= XRES && sx1 >= XRES && sx2 >= XRES && sx3 >= XRES)) {
+		return;
+	}
 
 	u32 ot_z = z / (MAX_Z / Z_BUCKETS) + FOREGROUND_BUCKETS;
 
