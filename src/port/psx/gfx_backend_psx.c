@@ -9,6 +9,7 @@
 void gfx_backend_init() {
 	initSerialIO(518400);
 	setupGPU((GPU_GP1 & GP1_STAT_FB_MODE_BITMASK) == GP1_STAT_FB_MODE_PAL? GP1_MODE_PAL: GP1_MODE_NTSC, XRES, YRES);
+	GPU_GP1 = gp1_dispBlank(true); // disable the display until a frame is rendered
 	cop0_setReg(COP0_SR, COP0_SR_CU2); // enable GTE while disabling all other COP0 features
 	gte_setControlReg(GTE_OFX, XRES / 2 << 16); // graphics origin at the screen center
 	gte_setControlReg(GTE_OFY, YRES / 2 << 16);
@@ -33,7 +34,6 @@ void gfx_backend_init() {
 		| (1 << 0 & BIU_CTRL_WRITE_DELAY_BITMASK);
 	SPU_CTRL = SPU_CTRL_ENABLE | SPU_CTRL_UNMUTE; // enable SPU
 	GPU_GP1 = gp1_dmaRequestMode(GP1_DREQ_GP0_WRITE); // allow DMA to the display
-	GPU_GP1 = gp1_dispBlank(false); // enable the display
 }
 
 void gfx_fade_to_color(Color color, u8 alpha) {

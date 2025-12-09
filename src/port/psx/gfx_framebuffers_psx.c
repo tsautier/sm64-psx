@@ -53,6 +53,8 @@ void gfx_swap_buffers(bool vsync_30fps) {
 			waitForVSync();
 		}
 		last_frame_time_us = osGetTime();
+
+		GPU_GP1 = gp1_dispBlank(false); // ensure the display has been turned back on
 	}
 
 	selected_fb ^= 1;
