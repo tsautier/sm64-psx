@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<iso_project image_name="sm64.iso" no_xa="0">
+<iso_project image_name="sm64.iso" cue_sheet="sm64.cue" no_xa="0">
 	<track type="data">
 		<identifiers
 			system = "PLAYSTATION"

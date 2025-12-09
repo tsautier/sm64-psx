@@ -223,8 +223,9 @@ endef
 # Main Targets                                                                 #
 #==============================================================================#
 ISO_OUT := $(BUILD_DIR)/sm64.iso
+CUE_OUT := $(BUILD_DIR)/sm64.cue
 ifeq ($(BENCH),0)
-all: $(ISO_OUT)
+all: $(ISO_OUT) $(CUE_OUT)
 else
 all: $(EXE)
 endif
@@ -622,7 +623,7 @@ $(EXE): $(ELF)
 $(BUILD_DIR)/psx_iso.xml: psx_iso.xml
 >	$(V)cp $< $@
 
-$(ISO_OUT): $(EXE) $(BUILD_DIR)/bgm/pack.xa $(BUILD_DIR)/psx_iso.xml system.cnf
+$(ISO_OUT) $(CUE_OUT) &: $(EXE) $(BUILD_DIR)/bgm/pack.xa $(BUILD_DIR)/psx_iso.xml system.cnf
 >	@$(PRINT) "$(GREEN)Making iso file: $(BLUE)$@ $(NO_COL)\n"
 >	$(V)cd $(BUILD_DIR) && ../../$(MKPSXISO) -y ./psx_iso.xml
 
