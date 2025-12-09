@@ -72,7 +72,7 @@ static void upload_texture(u32 vram_x, u32 vram_y, u32 clut_idx, void* tex_data,
 	TexHeader* tex = tex_data;
 	int clut_x, clut_y;
 	if(clut_idx < LOW_CLUT_SLOTS) {
-		clut_y = CLUT_PAGES_Y - clut_idx / LOW_CLUTS_PER_ROW;
+		clut_y = CLUT_PAGES_Y + clut_idx / LOW_CLUTS_PER_ROW;
 		clut_x = CLUT_PAGES_X + clut_idx % LOW_CLUTS_PER_ROW * 16;
 	} else {
 		clut_idx -= LOW_CLUT_SLOTS;
