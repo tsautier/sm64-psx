@@ -27,7 +27,6 @@ An original copy of the game is required to extract the assets.
 
 ## Known issues
 
-- Floating trees (temporary issue due caused by a math rewrite)
 - Some of Mario's animations do not play, and may even crash the game
 - Music cannot be generated at build time without manually obtaining the tracks
 - Sound effects work but sometimes sound odd or are missing notes
@@ -45,38 +44,13 @@ An original copy of the game is required to extract the assets.
 
 ## Building
 
-### Linux
-
-1. Build and install the mipsel-none-elf-gcc toolchain. For Arch users, it is available on [AUR](https://aur.archlinux.org/packages/mipsel-none-elf-gcc-git). (You can also install it on your system from https://github.com/malucard/poeng by running `make install-gcc` from there. This may take a long time.)
-2. Clone the repo: `git clone https://github.com/malucard/sm64-psx`, which will create a directory `sm64-port` and then **enter** it `cd sm64-port`.
-3. Place a Super Mario 64 ROM called `baserom.<VERSION>.z64` into the repository's root directory for asset extraction, ~~where `VERSION` can be `us`, `jp`, or `eu`~~. (For now, only `us` is supported.)
-4. (Optional) Create a folder named `.local` in the root of the repo and place every track of the soundtrack in it as a .wav file, numbered from 0 to 37 (0.wav, 1.wav, etc).
-5. Run `make` to build. To build the benchmark version without music, run `make BENCH=1`.
-The disc image will be located at `build/<VERSION>_psx/sm64.<VERSION>.iso`. The benchmark version will not generate an iso, only an elf and an exe, and it will require a PSX with 8MB of RAM (an emulator or a debug unit).
-
-### Windows (untested)
-
-1. Install and update MSYS2, following all the directions listed on https://www.msys2.org/.
-2. From the start menu, launch MSYS2 MinGW and install required packages depending on your machine (do **NOT** launch "MSYS2 MSYS"):
-  * 64-bit: Launch "MSYS2 MinGW 64-bit" and install: `pacman -S git make python3 mingw-w64-x86_64-gcc mingw-w64-x86_64-meson mingw-w64-x86_64-ffmpeg unzip`
-  * 32-bit (will also work on 64-bit machines): Launch "MSYS2 MinGW 32-bit" and install: `pacman -S git make python3 mingw-w64-i686-gcc mingw-w64-i686-meson mingw-w64-i686-ffmpeg unzip`
-  * Do **NOT** by mistake install the packages called simply `gcc` and `meson`.
-3. Install the mipsel-none-elf-gcc toolchain.
-4. The MSYS2 terminal has a _current working directory_ that initially is `C:\msys64\home\<username>` (home directory). At the prompt, you will see the current working directory in yellow. `~` is an alias for the home directory. You can change the current working directory to `My Documents` by entering `cd /c/Users/<username>/Documents`.
-5. Clone the repo: `git clone https://github.com/malucard/sm64-psx`, which will create a directory `sm64-psx` and then **enter** it `cd sm64-psx`.
-6. Place a *Super Mario 64* ROM called `baserom.<VERSION>.z64` into the repository's root directory for asset extraction, ~~where `VERSION` can be `us`, `jp`, or `eu`~~. (For now, only `us` is supported.)
-7. (Optional) Create a folder named `.local` in the root of the repo and place every track of the soundtrack in it as a .wav file, numbered from 0 to 37 (0.wav, 1.wav, etc).
-8. Run `make` to build. To build the benchmark version, run `make BENCH=1`.
-The disc image will be located at `build/<VERSION>_psx/sm64.<VERSION>.iso`. The benchmark version will not generate an iso, only an elf and an exe, and it will require a PSX with 8MB of RAM (an emulator or a debug unit).
-
-#### Troubleshooting
-
-1. If you get `make: gcc: no suitable C and C++ compiler found`, `make: gcc: command not found`, `make: gcc: No such file or directory` although the packages did successfully install, you probably launched the wrong MSYS2. Read the instructions again. The terminal prompt should contain "MINGW32" or "MINGW64" in purple text, and **NOT** "MSYS".
-2. If you get `Failed to open baserom.us.z64!` you failed to place the baserom in the repository. You can write `ls` to list the files in the current working directory. If you are in the `sm64-psx` directory, make sure you see it here.
-3. If you get `make: *** No targets specified and no makefile found. Stop.`, you are not in the correct directory. Make sure the yellow text in the terminal ends with `sm64-psx`. Use `cd <dir>` to enter the correct directory. If you write `ls` you should see all the project files, including `Makefile` if everything is correct.
-4. If you get any error, be sure MSYS2 packages are up to date by executing `pacman -Syu` and `pacman -Su`. If the MSYS2 window closes immediately after opening it, restart your computer.
-5. Check if mipsel gcc is working by executing `mipsel-none-elf-gcc -v`. If it doesn't work, you either opened the wrong MSYS start menu entry or installed the incorrect gcc package.
-6. When switching between building on other platforms, run `make -C tools clean` first to allow for the tools to recompile on the new platform. This also helps when switching between shells like WSL and MSYS2.
+1. Place a *Super Mario 64* ROM called `baserom.<VERSION>.z64` into the repository's root directory for asset extraction, ~~where `VERSION` can be `us`, `jp`, or `eu`~~. (For now, only `us` is supported.)
+2. (Optional) Create a folder named `.local` in the root of the repo and place every track of the soundtrack in it as a .wav file, numbered from 0 to 37 (0.wav, 1.wav, etc). Don't worry too much about this, one day this will be done automatically.
+3. Now you need a properly set up environment. A Dockerfile is provided to simplify this. To use it, ensure you have [Docker](https://www.docker.com) (or a compatible alternative) installed and set up. (if on Linux, put it in [rootless mode](https://docs.docker.com/engine/security/rootless/) as well!)
+	- If on Linux, I've included a convenience script for invoking a container from CLI. Run `./idc` to enter a Bash shell in the container, or `./idc <command>` to run one command in it (for example, `./idc make` or `./idc make clean`).
+	- If using Visual Studio Code, you can simply install the Dev Containers extension, open the repository, and click "Reopen in Container" (either from the notification or from the Ctrl+Shift+P menu). The editor will act like it's running inside the container, including the terminal.
+	- Alternatively, if you plan to do a lot of PS1 development, you can skip the container and simply have the right things installed on your system, but this is the harder option. You must be using Linux (any). You need FFMPEG's libraries, libpng, xxd, Python 3, meson, GCC or Clang, and version 15 or later of the mipsel-none-elf-gcc toolchain. To build and install mipsel-none-elf-gcc, there is a utility in [this other repo](https://github.com/malucard/poeng). Clone it and run `make install-gcc`. It will take a pretty long time.
+4. Now run `make`, and when it's done, sm64.iso and sm64.cue will be in `build/us_psx/`. To build in benchmark mode, use `make BENCH=1`. The benchmark mode boots directly into a level and doesn't require a CD, but requires 8 MB of RAM and won't work on a retail console. `make clean` will remove build/, and `make distclean` will clean both build/ and tools/.
 
 ## Project Structure
 

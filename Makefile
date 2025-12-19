@@ -3,6 +3,7 @@
 include util.mk
 
 .RECIPEPREFIX = >
+SHELL = /bin/bash
 
 # Default target
 default: all
@@ -111,5 +112,5 @@ else
 	include Makefile.psx.mk
 endif
 
-PSXAVENC := tools/psxavenc/build/psxavenc
+PSXAVENC := tools/psxavenc
 MKPSXISO := tools/mkpsxiso

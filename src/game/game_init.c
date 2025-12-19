@@ -226,6 +226,7 @@ void controller_backend_read(OSContPad* pad, u32 port);
 void read_controller_inputs(void) {
 	gControllers[0].controllerData = &gControllerPads[0];
     for (u32 port = 0; port < 2; port++) {
+    	gControllerPads[0].errnum = 1;
         controller_backend_read(&gControllerPads[0], port);
         if(gControllerPads[0].errnum == 0) {
             break;

@@ -110,7 +110,7 @@ endif
 EXT_LD    := $(CROSS)ld
 AS        := $(CROSS)as
 AR        := $(CROSS)ar
-NM		  := $(CROSS)nm
+NM        := $(CROSS)nm
 OBJDUMP   := $(CROSS)objdump
 OBJCOPY   := $(CROSS)objcopy
 
@@ -504,10 +504,16 @@ else
 	EXT_FILES_SECTIONS_TXT := $(BUILD_DIR)/ext_files_sections.txt
 endif
 
+# workaround make getting stuck while processing the dependency graph by splitting it at the choke point: ext_files.dat
+ifeq ($(MAKE_EXT_FILES),1)
 $(BUILD_DIR)/ext_files_defsym.txt $(BUILD_DIR)/ext_files.dat &: $(TOOLS_DIR)/makextfiles $(EXT_FILES_SECTIONS_TXT)
 >	$(V)$(TOOLS_DIR)/makextfiles $(EXT_FILES_SECTIONS_TXT) $(BUILD_DIR)/ext_files.dat $(BUILD_DIR)/ext_files_defsym.txt.tmp
 >	@echo $(HARDCODED_SEGMENTS) >> $(BUILD_DIR)/ext_files_defsym.txt.tmp
 >	@mv $(BUILD_DIR)/ext_files_defsym.txt.tmp $(BUILD_DIR)/ext_files_defsym.txt
+else
+$(BUILD_DIR)/ext_files_defsym.txt $(BUILD_DIR)/ext_files.dat &:
+>	while ! $(MAKE) -q $(BUILD_DIR)/ext_files.dat MAKE_EXT_FILES=1; do $(MAKE) $(BUILD_DIR)/ext_files.dat MAKE_EXT_FILES=1; done
+endif
 
 #==============================================================================#
 # Generated Source Code Files                                                  #
@@ -610,7 +616,7 @@ ifneq ($(BENCH),0)
 	LDFLAGS += -Wl,--unresolved-symbols=ignore-all
 endif
 
-$(ELF): $(SEG_FILES_WITH_GEO) $(O_FILES) $(GODDARD_O_FILES) $(LIBC_O_FILES) $(BUILD_DIR)/ext_files_defsym.txt $(BUILD_DIR)/executable.preprocessed.ld $(EXT_FILES_DAT_IF_NEEDED)
+$(ELF): $(SEG_FILES_WITH_GEO) $(O_FILES) $(GODDARD_O_FILES) $(LIBC_O_FILES) $(BUILD_DIR)/ext_files_defsym.txt $(BUILD_DIR)/executable.preprocessed.ld
 >	@$(PRINT) "$(GREEN)Linking elf: $(BLUE)$@ $(NO_COL)\n"
 >	$(V)$(LD) $(CFLAGS) -L $(BUILD_DIR) -no-pie -o $@.tmp $(addprefix -Wl$(COMMA)--just-symbols=,$(SEG_FILES_WITH_GEO)) `cat $(BUILD_DIR)/ext_files_defsym.txt` $(O_FILES) $(GODDARD_O_FILES) $(LIBC_O_FILES) $(LDFLAGS)
 >	$(V)$(OBJCOPY) -R.scratchpad -R.bss -R.sbss $@.tmp

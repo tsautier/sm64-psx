@@ -65,33 +65,31 @@ extract_data_for_mio_SOURCES := extract_data_for_mio.c
 
 skyconv_SOURCES := skyconv.c n64graphics.c utils.c
 
-# upstream psxavenc currently does not compile! need to build a fork
-psxavenc/build/psxavenc:
-	$(V)rm -rf psxavenc
-	$(V)git clone -j8 https://github.com/malucard/psxavenc
-	$(V)cd psxavenc && meson setup build
-	$(V)cd psxavenc && meson compile -C build
+# the psxavenc CI seems to just not work currently
+#psxavenc:
+#	$(V)wget https://github.com/WonderfulToolchain/psxavenc/releases/download/v0.3.1/psxavenc-linux.zip
+#	$(V)unzip psxavenc-linux.zip
+#	$(V)mv bin/psxavenc ./psxavenc
+#	$(V)rm -rf bin psxavenc-linux.zip
+psxavenc:
+	$(V)rm -rf psxavenc-git
+	$(V)git clone https://github.com/WonderfulToolchain/psxavenc psxavenc-git
+	$(V)cd psxavenc-git && meson setup build && meson compile -C build
+	$(V)mv psxavenc-git/build/psxavenc ./psxavenc
+	$(V)rm -rf psxavenc-git
 
-ifeq ($(HOST_ENV),MinGW)
-mkpsxiso:
-	$(V)wget -q https://github.com/Lameguy64/mkpsxiso/releases/download/v2.10/mkpsxiso-2.10-win64.zip
-	$(V)unzip mkpsxiso-2.10-win64.zip
-	$(V)mv mkpsxiso-2.10-win64/bin/mkpsxiso.exe ./mkpsxiso
-	$(V)rm -rf mkpsxiso-2.10-win64 mkpsxiso-2.10-win64.zip
-else
 mkpsxiso:
 	$(V)wget -q https://github.com/Lameguy64/mkpsxiso/releases/download/v2.10/mkpsxiso-2.10-Linux.zip
 	$(V)unzip mkpsxiso-2.10-Linux.zip
 	$(V)mv mkpsxiso-2.10-Linux/bin/mkpsxiso ./mkpsxiso
 	$(V)rm -rf mkpsxiso-2.10-Linux mkpsxiso-2.10-Linux.zip
-endif
 
-all-except-recomp: $(LIBAUDIOFILE) $(BUILD_PROGRAMS) psxavenc/build/psxavenc mkpsxiso
+all-except-recomp: $(LIBAUDIOFILE) $(BUILD_PROGRAMS) psxavenc mkpsxiso
 
 all: all-except-recomp ido5.3_recomp
 
 clean:
-	$(RM) $(ALL_PROGRAMS)
+	$(RM) $(ALL_PROGRAMS) psxavenc mkpsxiso
 	$(MAKE) -C audiofile clean
 	$(MAKE) -C ido5.3_recomp clean
 
