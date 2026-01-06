@@ -263,6 +263,46 @@ def tessellate_triangle_queue():
 						triangle_queue.append((vtx_list_name, i1, i2, i3))
 						did_anything = True
 
+# repeatedly split large triangles in the queue
+def normalize_triangle_queue_uvs():
+	for tri_idx, tri in enumerate(triangle_queue):
+		if tri is not None:
+			vtx_list_name, i0, i1, i2 = tri
+			if vtx_list_name is not None and (vtx_list := static_n64_vtx_lists.get(vtx_list_name)):
+				v0 = vtx_list.vertices[i0]
+				v1 = vtx_list.vertices[i1]
+				v2 = vtx_list.vertices[i2]
+				v0u = v0.u * 0xFFFF >> 21
+				v1u = v1.u * 0xFFFF >> 21
+				v2u = v2.u * 0xFFFF >> 21
+				v0v = v0.v * 0xFFFF >> 21
+				v1v = v1.v * 0xFFFF >> 21
+				v2v = v2.v * 0xFFFF >> 21
+				if (v0u >= 64 and v1u >= 64 and v2u >= 64) or (v0v >= 64 and v1v >= 64 and v2v >= 64):
+					vtx_list = N64VtxList()
+					while v0u >= 64 and v1u >= 64 and v2u >= 64:
+						v0u -= 64
+						v1u -= 64
+						v2u -= 64
+					while v0v >= 64 and v1v >= 64 and v2v >= 64:
+						v0v -= 64
+						v1v -= 64
+						v2v -= 64
+					v0 = copy(v0)
+					v0.u = (v0u << 21) * 0x10000
+					v0.v = (v0v << 21) * 0x10000
+					v1 = copy(v1)
+					v1.u = (v1u << 21) * 0x10000
+					v1.v = (v1v << 21) * 0x10000
+					v2 = copy(v2)
+					v2.u = (v2u << 21) * 0x10000
+					v2.v = (v2v << 21) * 0x10000
+					vtx_list.vertices = [v0, v1, v2]
+					vtx_list_name = f"{vtx_list_name}_norm{len(static_n64_vtx_lists)}"
+					static_n64_vtx_lists[vtx_list_name] = vtx_list
+					n64_vtx_list_lengths[vtx_list_name] = 3
+					triangle_queue[tri_idx] = vtx_list_name, 0, 1, 2
+
 # consider one triangle to write, potentially merging it with a second one into a quadrangle
 def flush_single_triangle(t0_idx: int):
 	assert cur_display_list is not None
@@ -289,8 +329,9 @@ def flush_single_triangle(t0_idx: int):
 def flush_triangle_queue():
 	if len(triangle_queue) == 0:
 		return
-	if should_tessellate:
-		tessellate_triangle_queue()
+	#if should_tessellate:
+	#	tessellate_triangle_queue()
+	#normalize_triangle_queue_uvs()
 	assert cur_display_list is not None
 	for t0_idx in range(len(triangle_queue)):
 		flush_single_triangle(t0_idx)

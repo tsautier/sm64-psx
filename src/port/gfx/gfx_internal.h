@@ -89,11 +89,8 @@ void ensure_vertices_converted(VtxList* vtx_list, u32 count);
 
 #define COMPILED_TAG 0x777A1210 // MARIO :)
 
-void gfx_init_tessellation_queue();
 void gfx_begin_queueing_for_tessellation(const GfxVtx* v0, const GfxVtx* v1, const GfxVtx* v2, const GfxVtx* v3, u8 flags);
 void gfx_finish_queueing_for_tessellation(u32 rgb0, u32 rgb1, u32 rgb2, u32 rgb3);
-void gfx_flush_tessellation_queue_inner();
-void gfx_flush_tessellation_queue_if_necessary();
 
 #define FATAL_GTE_ERRORS (\
 	GTE_FLAG_MAC0_UNDERFLOW |\

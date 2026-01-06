@@ -39,7 +39,49 @@ void gfx_reset_dl_exec() {
 	gte_setControlReg(GTE_LC33, 0);
 }
 
-[[gnu::flatten]] ALWAYS_INLINE static void draw_poly(const GfxVtx* v0, const GfxVtx* v1, const GfxVtx* v2, const GfxVtx* v3, u32 flags, s16 ortho_z) {
+typedef union {
+	struct {
+		u8 idx0;
+		u8 idx1;
+		u16 weight;
+	};
+	u32 data;
+} Interpolated;
+
+typedef struct {
+	//u32 v0data;
+	//u32 v1data;
+	//u32 v2data;
+	//u32 v3data;
+	GfxVtx v0;
+	GfxVtx v1;
+	GfxVtx v2;
+	GfxVtx v3;
+	bool is_quad;
+} SubPoly;
+
+#define POLY_QUEUE_MAX 3
+
+typedef struct {
+	u32 count;
+	SubPoly sub_polys[POLY_QUEUE_MAX];
+} PolyQueue;
+
+static GfxVtx between(const GfxVtx* v0, const GfxVtx* v1) {
+	return (GfxVtx) {
+		.x = ((s32) v0->x + v1->x) / 2, .y = ((s32) v0->y + v1->y) / 2, .z = ((s32) v0->z + v1->z) / 2,
+		.u = (v0->u + v1->u) / 2, .v = (v0->v + v1->v) / 2,
+		.color.as_u32 = ((v0->color.as_u32 & 0xFEFEFE) + (v1->color.as_u32 & 0xFEFEFE)) / 2,
+	};
+}
+
+[[gnu::flatten]] ALWAYS_INLINE static void draw_poly(PolyQueue* queue, u32 flags) {
+	SubPoly* poly = &queue->sub_polys[--queue->count];
+	GfxVtx* v0 = &poly->v0;
+	GfxVtx* v1 = &poly->v1;
+	GfxVtx* v2 = &poly->v2;
+	GfxVtx* v3 = poly->is_quad? &poly->v3: NULL;
+
 	gte_loadDataRegM(GTE_VXY0, (const u32*) &v0->xy);
 	gte_loadDataRegM(GTE_VZ0, &v0->zuv);
 	gte_loadDataRegM(GTE_VXY1, (const u32*) &v1->xy);
@@ -63,8 +105,10 @@ void gfx_reset_dl_exec() {
 	u32 sxy0, sxy1, sxy2, sxy3;
 	s32 z, min_z;
 	bool gte_errored;
-	if(ortho_z >= 0) {
-		if((u32) ortho_z >= MAX_Z) return;
+	if(is_ortho) {
+		s16 ortho_z = -1;
+		ortho_z = is_2d_background? BACKGROUND_Z: (foreground_z? --foreground_z: 0);
+		//if((u32) ortho_z >= MAX_Z) return;
 		gte_errored = false;
 		z = ortho_z;
 		min_z = ortho_z;
@@ -90,6 +134,7 @@ void gfx_reset_dl_exec() {
 		gte_commandNoNop(GTE_CMD_RTPT | GTE_SF);
 
 		debug_processed_poly_count++;
+		is_2d_background = false;
 
 		//// if there was any error in rtpt, cull it
 		//if(gte_getControlReg(GTE_FLAG) & IMPORTANT_GTE_ERRORS) return;
@@ -148,7 +193,7 @@ void gfx_reset_dl_exec() {
 				min_z = v3sz;
 			}
 
-			// reject backfaced quads
+			// reject if both triangles are backfaced
 			if(nclip_result >= 0 && (s32) gte_getDataReg(GTE_MAC0) >= 0) return;
 		} else {
 			sxy3 = sxy2;
@@ -181,12 +226,68 @@ void gfx_reset_dl_exec() {
 	}
 
 	// these things will hopefully be done while nct is cooking
-	if(gte_errored || ((flags & (PRIM_FLAG_TESSELLATE_LOW | PRIM_FLAG_TESSELLATE_HIGH)) && min_z <= MAX_TESSELLATION_Z)) {
-		if(min_z > MAX_HIGH_TESSELLATION_Z) {
-			flags &= ~PRIM_FLAG_TESSELLATE_HIGH;
+	if(false && (gte_errored || ((flags & PRIM_FLAG_TESSELLATE) && min_z <= MAX_TESSELLATION_Z))) {
+#if 1
+		if(v3) {
+			if(queue->count <= (u32) POLY_QUEUE_MAX - 4) {
+				SubPoly* additions = &queue->sub_polys[queue->count + 1];
+				queue->count += 4;
+
+				// top right
+				additions[0].v0 = between(v0, v2);
+				additions[0].v1 = between(v0, v3);
+				additions[0].v2 = *v2;
+				additions[0].v3 = between(v2, v3);
+				additions[0].is_quad = true;
+
+				// bottom left
+				additions[1].v0 = between(v0, v1);
+				additions[1].v1 = *v1;
+				additions[1].v2 = additions[0].v1;
+				additions[1].v3 = between(v1, v3);
+				additions[1].is_quad = true;
+
+				// bottom right
+				additions[2].v0 = additions[0].v1;
+				additions[2].v1 = additions[1].v3;
+				additions[2].v2 = additions[0].v3;
+				additions[2].v3 = *v3;
+				additions[2].is_quad = true;
+
+				// top left
+				*v1 = additions[1].v0;
+				*v2 = additions[0].v0;
+				*v3 = additions[0].v1;
+			}
+		} else {
+			if(queue->count <= POLY_QUEUE_MAX - 3) {
+				SubPoly* additions = &queue->sub_polys[queue->count + 1];
+				queue->count += 3;
+
+				// top right
+				additions[0].v0 = between(v0, v2);
+				additions[0].v1 = between(v1, v2);
+				additions[0].v2 = *v2;
+				additions[0].is_quad = false;
+
+				// bottom left
+				additions[1].v0 = between(v0, v1);
+				additions[1].v1 = *v1;
+				additions[1].v2 = additions[0].v1;
+				additions[1].is_quad = false;
+
+				// top left
+				*v1 = additions[1].v0;
+				*v2 = additions[0].v0;
+				poly->v3 = additions[0].v1;
+				poly->is_quad = true;
+			}
 		}
+#else
 		if(gte_errored) {
-			flags |= PRIM_FLAG_TESSELLATE_HIGH;
+			flags |= PRIM_FLAG_TESSELLATE | PRIM_FLAG_TESSELLATE_HIGH;
+		} else if(min_z > MAX_HIGH_TESSELLATION_Z) {
+			flags &= ~PRIM_FLAG_TESSELLATE_HIGH;
 		}
 		gfx_begin_queueing_for_tessellation(v0, v1, v2, v3, flags);
 		if(flags & PRIM_FLAG_LIGHTED) {
@@ -203,6 +304,7 @@ void gfx_reset_dl_exec() {
 		rgb1 = rgb1 / 2 & 0x7F7F7F;
 		rgb2 = rgb2 / 2 & 0x7F7F7F;
 		gfx_finish_queueing_for_tessellation(rgb0, rgb1, rgb2, rgb3);
+#endif
 		return;
 	}
 	u32 ot_z = z / (MAX_Z / Z_BUCKETS) + FOREGROUND_BUCKETS;
@@ -400,15 +502,13 @@ static const s16 shadow_vertex1[2] = {
 	[[gnu::assume(op >= _DL_CMD_ENUM_FIRST_EXTRA && op <= _DL_CMD_ENUM_END)]];
 	switch(op) {
 		case DL_CMD_MTX_MUL: {
-			gfx_flush_tessellation_queue_if_necessary();
 			const ShortMatrix* mtx = (const ShortMatrix*) cmd;
 			gfx_modelview_mul(mtx);
 			break;
 		}
 		case DL_CMD_MTX_N64_SET:
 		case DL_CMD_MTX_N64_MUL: {
-			gfx_flush_tessellation_queue_if_necessary();
-			const u32* addr = (void*) cmd;
+			const u32* addr = (const u32*) cmd;
 			ShortMatrix arg_mtx;
 			for(int i = 0; i < 4; i++) {
 				for(int j = 0; j < 4; j += 2) {
@@ -430,7 +530,6 @@ static const s16 shadow_vertex1[2] = {
 			break;
 		}
 		case DL_CMD_MTX_POP: {
-			gfx_flush_tessellation_queue_if_necessary();
 			gfx_modelview_pop();
 			break;
 		}
@@ -475,19 +574,20 @@ DL_EXEC_ICACHE_FUNC void gfx_run_compiled_dl(dl_t* dl) {
 				break;
 			}
 			case DL_CMD_TRI: case DL_CMD_QUAD: {
-				s16 ortho_z = -1;
-				if(is_ortho) {
-					ortho_z = is_2d_background? BACKGROUND_Z: (foreground_z? --foreground_z: 0);
+				PolyQueue poly_queue;
+				poly_queue.count = 1;
+				poly_queue.sub_polys[0].v0 = vertices[cmd >> 20 /*& 0xF*/];
+				poly_queue.sub_polys[0].v1 = vertices[cmd >> 16 & 0xF];
+				poly_queue.sub_polys[0].v2 = vertices[cmd >> 12 & 0xF];
+				if(op == DL_CMD_QUAD) {
+					poly_queue.sub_polys[0].v3 = vertices[cmd >> 8 & 0xF];
+					poly_queue.sub_polys[0].is_quad = true;
 				} else {
-					is_2d_background = false;
+					poly_queue.sub_polys[0].is_quad = false;
 				}
-				draw_poly(
-					&vertices[cmd >> 20 /*& 0xF*/],
-					&vertices[cmd >> 16 & 0xF],
-					&vertices[cmd >> 12 & 0xF],
-					op == DL_CMD_QUAD? &vertices[cmd >> 8 & 0xF]: NULL,
-					cmd & 0xFF, ortho_z
-				);
+				do {
+					draw_poly(&poly_queue, cmd & 0xFF);
+				} while(poly_queue.count);
 				break;
 			}
 			case DL_CMD_ENV_COLOR_ALPHA_0:
@@ -509,7 +609,6 @@ DL_EXEC_ICACHE_FUNC void gfx_run_compiled_dl(dl_t* dl) {
 				break;
 			}
 			case DL_CMD_MTX_SET: {
-				gfx_flush_tessellation_queue_if_necessary();
 				const ShortMatrix* mtx = (const ShortMatrix*) cmd;
 				gfx_modelview_set(mtx);
 				break;

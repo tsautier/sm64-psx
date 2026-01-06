@@ -6,11 +6,8 @@
 #include <assert.h>
 #include <engine/math_util.h>
 
-void gfx_init_tessellation_queue() {}
 void gfx_begin_queueing_for_tessellation(const GfxVtx* v0, const GfxVtx* v1, const GfxVtx* v2, const GfxVtx* v3, u8 flags) {}
 void gfx_finish_queueing_for_tessellation(u32 rgb0, u32 rgb1, u32 rgb2, u32 rgb3) {}
-void gfx_flush_tessellation_queue_inner() {}
-void gfx_flush_tessellation_queue_if_necessary() {}
 
 u32 debug_processed_poly_count = 0;
 void* tex_ptr = NULL;

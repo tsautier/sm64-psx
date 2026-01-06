@@ -30,7 +30,6 @@ void gfx_flush_global_dl() {
 		gfx_init_global_dl();
 		scratchpad_call(gfx_run_compiled_dl, global_dl);
 	}
-	gfx_flush_tessellation_queue_if_necessary();
 }
 
 void* gfx_alloc_in_global_dl(u32 size) {

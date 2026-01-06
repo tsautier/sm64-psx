@@ -1,3 +1,4 @@
+#if 0
 #include "port/gfx/gfx.h"
 #include <port/gfx/gfx_internal.h>
 #include <macros.h>
@@ -7,7 +8,7 @@
 #include <engine/math_util.h>
 
 // check the .map file and ensure the section is smaller than 0x1000 so it actually fits in icache!!!
-#define TESSELLATION_ICACHE_FUNC [[gnu::section(".tessellation")]] [[gnu::noinline]]
+//#define TESSELLATION_ICACHE_FUNC [[gnu::section(".tessellation")]] [[gnu::noinline]]
 
 #define NO_GAPS
 //#define NO_GAPS_AT_ALL
@@ -381,3 +382,4 @@ ALWAYS_INLINE void gfx_finish_queueing_for_tessellation(u32 rgb0, u32 rgb1, u32 
 		gfx_flush_tessellation_queue_inner();
 	}
 }
+#endif

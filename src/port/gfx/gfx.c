@@ -17,7 +17,6 @@ void audio_backend_tick();
 void gfx_init() {
 	gfx_backend_init();
 	gfx_init_global_dl();
-	gfx_init_tessellation_queue();
 	gfx_init_buffers();
 	audio_backend_init();
 }

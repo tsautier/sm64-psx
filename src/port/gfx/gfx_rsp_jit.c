@@ -186,10 +186,10 @@ static int max3(int x, int y, int z) {
 						u32 depth = max_z - min_z;
 						u32 size_heuristic = sqrtu(width * width + height * height + depth * depth);
 						if(size_heuristic > 256) {
-							flags |= PRIM_FLAG_TESSELLATE_LOW;
-							if(size_heuristic > 1024) {
-								flags |= PRIM_FLAG_TESSELLATE_HIGH;
-							}
+							flags |= PRIM_FLAG_TESSELLATE;//_LOW;
+							//if(size_heuristic > 1024) {
+							//	flags |= PRIM_FLAG_TESSELLATE_HIGH;
+							//}
 						}
 					}
 				}
